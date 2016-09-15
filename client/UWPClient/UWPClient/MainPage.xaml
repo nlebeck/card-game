@@ -8,10 +8,13 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Button x:Name="button" Content="Send HTTP request" HorizontalAlignment="Left" Height="58" Margin="50,195,0,0" VerticalAlignment="Top" Width="169" Click="button_Click"/>
-        <TextBlock x:Name="labelTextBlock" HorizontalAlignment="Left" Height="36" Margin="50,360,0,0" TextWrapping="Wrap" Text="Response:" VerticalAlignment="Top" Width="79"/>
-        <TextBlock x:Name="responseTextBlock" HorizontalAlignment="Left" Height="200" Margin="134,360,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="129"/>
-        <TextBox x:Name="urlTextBox" HorizontalAlignment="Left" Height="0" Margin="50,290,0,0" TextWrapping="Wrap" Text="http://localhost:8080" VerticalAlignment="Top" Width="300"/>
+        <Button x:Name="button" Content="Send message" HorizontalAlignment="Left" Height="58" Margin="50,195,0,0" VerticalAlignment="Top" Width="169" Click="button_Click"/>
+        <TextBlock x:Name="responseLabelTextBlock" HorizontalAlignment="Left" Height="36" Margin="50,360,0,0" TextWrapping="Wrap" Text="Response:" VerticalAlignment="Top" Width="79"/>
+        <TextBlock x:Name="responseTextBlock" HorizontalAlignment="Left" Height="36" Margin="134,360,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="129"/>
+        <TextBox x:Name="portTextBox" HorizontalAlignment="Left" Height="0" Margin="219,290,0,0" TextWrapping="Wrap" Text="8080" VerticalAlignment="Top" Width="131"/>
+        <TextBox x:Name="hostNameTextBox" HorizontalAlignment="Left" Height="32" Margin="50,290,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="164"/>
+        <TextBlock x:Name="errorLabelTextBlock" HorizontalAlignment="Left" Height="36" Margin="50,401,0,0" TextWrapping="Wrap" Text="Error:" VerticalAlignment="Top" Width="79"/>
+        <TextBlock x:Name="errorTextBlock" HorizontalAlignment="Left" Height="229" Margin="134,401,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="216"/>
 
     </Grid>
 </Page>

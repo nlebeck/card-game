@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Networking;
+using Windows.Networking.Sockets;
+using Windows.Storage.Streams;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -30,20 +32,19 @@ namespace UWPClient
 
         private async void button_Click(object sender, RoutedEventArgs e)
         {
-            string responseText = "No response";
-            HttpClient client = new HttpClient();
-            HttpRequestMessage request = new HttpRequestMessage();
+            string errorMessage = "";
+
             try
             {
-                HttpResponseMessage response = await client.GetAsync(urlTextBox.Text);
-                responseText = await response.Content.ReadAsStringAsync();
+                TcpMessager tcpMessager = TcpMessager.GetTcpMessager(8079);
+                await tcpMessager.SendMessageAsync("Hello world!", this.hostNameTextBox.Text, int.Parse(this.portTextBox.Text));
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
-                responseText = "Error: " + exception;
+                errorMessage = exception.Message;
             }
 
-            this.responseTextBlock.Text = responseText;
+            this.errorTextBlock.Text = errorMessage;
         }
     }
 }
