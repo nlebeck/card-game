@@ -3,28 +3,23 @@ package niellebeck.cardgameserver.messaging;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TcpMessager {
     
-    private static Map<Integer, TcpMessager> tcpMessagerMap = new HashMap<Integer, TcpMessager>();
+    private static ConcurrentHashMap<Integer, TcpMessager> tcpMessagerMap = new ConcurrentHashMap<Integer, TcpMessager>();
     
     private ServerSocket serverSocket;
     
-    public static TcpMessager getTcpMessager(int serverPort) throws IOException {
-        if (!tcpMessagerMap.containsKey(serverPort)) {
-            tcpMessagerMap.put(serverPort, new TcpMessager(serverPort));
+    public static TcpMessager getTcpMessager(int listeningPort) throws IOException {
+        if (!tcpMessagerMap.containsKey(listeningPort)) {
+            tcpMessagerMap.put(listeningPort, new TcpMessager(listeningPort));
         }
-        return tcpMessagerMap.get(serverPort);
+        return tcpMessagerMap.get(listeningPort);
     }
     
-    private TcpMessager(int serverPort) throws IOException {
-        this.serverSocket = new ServerSocket(serverPort);
-    }
-    
-    public void sendMessage(String message, String hostname, int port) throws IOException {
-        //TODO: implement
+    private TcpMessager(int listeningPort) throws IOException {
+        this.serverSocket = new ServerSocket(listeningPort);
     }
     
     public String receiveMessage() throws IOException {
