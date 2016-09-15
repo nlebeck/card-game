@@ -1,30 +1,37 @@
 package niellebeck.cardgameserver;
 
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import java.io.IOException;
 
-import niellebeck.cardgameserver.handlers.DefaultHandler;
+import niellebeck.cardgameserver.messaging.TcpMessager;
 
 /**
  * The server for the card game
  *
  */
-public class CardGameServer extends AbstractHandler
+public class CardGameServer
 {
-    private static final int PORT = 8080;
+    private static final int SERVER_PORT = 8080;
     
     public static void main( String[] args )
-    {
-    	Server server = new Server(PORT);
-    	server.setHandler(new DefaultHandler());
-    	
-    	try {
-    	    server.start();
-    	    server.join();
-    	}
-    	catch (Exception e) {
-    	    System.err.println("Error starting server: " + e.getMessage());
-    	    System.exit(1);
-    	}
+    {        
+        TcpMessager tcpMessager = null;
+        try {
+            tcpMessager = TcpMessager.getTcpMessager(SERVER_PORT);
+        }
+        catch (IOException e) {
+            System.err.println("Error creating TcpMessager: " + e);
+            System.exit(1);
+        }
+        
+        while (true) {
+            String message = null;
+            try {
+                message = tcpMessager.receiveMessage();
+            }
+            catch (IOException e) {
+                System.err.println("Error receiving message: " + e);
+            }
+            System.out.println(message);
+        }
     }
 }
