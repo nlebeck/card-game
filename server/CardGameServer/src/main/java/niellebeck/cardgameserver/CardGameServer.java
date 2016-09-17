@@ -32,6 +32,13 @@ public class CardGameServer
                 System.err.println("Error receiving message: " + e);
             }
             System.out.println(message);
+            
+            try {
+                TcpMessager.sendMessage("Message received: " + message, "127.0.0.1", 8079);
+            }
+            catch (IOException e) {
+                System.err.println("Error sending response: " + e);
+            }
         }
     }
 }
