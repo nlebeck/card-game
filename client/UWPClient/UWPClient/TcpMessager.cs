@@ -5,27 +5,63 @@
     using Windows.Storage.Streams;
     using System;
     using System.Collections.Concurrent;
+    using System.Runtime.InteropServices.WindowsRuntime;
     using System.Threading.Tasks;
+
+    public delegate void MessageCallback(string message);
 
     public class TcpMessager
     {
         private static ConcurrentDictionary<int, TcpMessager> tcpMessagerDictionary = new ConcurrentDictionary<int, TcpMessager>();
 
-        public static TcpMessager GetTcpMessager(int listeningPort)
+        private StreamSocketListener socketListener;
+
+        private MessageCallback callback;
+
+        public TcpMessager(MessageCallback callback)
         {
-            if (!tcpMessagerDictionary.ContainsKey(listeningPort))
+            this.callback = callback;
+            this.socketListener = new StreamSocketListener();
+        }
+
+        public async void HandleConnectionReceived(StreamSocketListener socketListener, StreamSocketListenerConnectionReceivedEventArgs args)
+        {
+            IBuffer lengthInputBuffer = new Windows.Storage.Streams.Buffer(4);
+            IBuffer lengthOutputBuffer = await args.Socket.InputStream.ReadAsync(lengthInputBuffer, 4, InputStreamOptions.None);
+            byte[] lengthBytes = WindowsRuntimeBufferExtensions.ToArray(lengthOutputBuffer);
+            int lengthSigned = (lengthBytes[0] << 24) | (lengthBytes[1] << 16) | (lengthBytes[2] << 8) | lengthBytes[3];
+            uint length = (uint)lengthSigned;
+
+            IBuffer inputBuffer = new Windows.Storage.Streams.Buffer(length);
+            IBuffer outputBuffer = await args.Socket.InputStream.ReadAsync(inputBuffer, length, InputStreamOptions.None);
+            byte[] messageBytes = WindowsRuntimeBufferExtensions.ToArray(outputBuffer);
+            char[] messageChars = new char[messageBytes.Length];
+            for (int i = 0; i < messageBytes.Length; i++)
             {
-                tcpMessagerDictionary[listeningPort] = new TcpMessager(listeningPort);
+                messageChars[i] = (char)messageBytes[i];
             }
-            return tcpMessagerDictionary[listeningPort];
+            string message = new string(messageChars);
+
+            callback(message);
         }
 
-        private TcpMessager(int listeningPort)
+        public static async Task BindMessageCallback(int port, MessageCallback callback)
         {
-
+            if (!tcpMessagerDictionary.ContainsKey(port))
+            {
+                TcpMessager tcpMessager = new TcpMessager(callback);
+                await tcpMessager.socketListener.BindServiceNameAsync(port.ToString());
+                tcpMessager.socketListener.ConnectionReceived += tcpMessager.HandleConnectionReceived;
+                tcpMessagerDictionary[port] = tcpMessager;
+            }
+            else
+            {
+                TcpMessager tcpMessager = tcpMessagerDictionary[port];
+                tcpMessager.callback = callback;
+            }
         }
 
-        public async Task SendMessageAsync(string message, string hostname, int port)
+        public static async Task SendMessageAsync(string message, string hostname, int port)
         {
             using (StreamSocket socket = new StreamSocket())
             {
@@ -33,17 +69,16 @@
                 HostName hostNameObj = new HostName(hostname);
                 await socket.ConnectAsync(hostNameObj, portString);
 
-                int messageLength = message.Length;
                 byte[] bytes = new byte[4];
-                bytes[0] = (byte)((messageLength >> 24) & 0xFF);
-                bytes[1] = (byte)((messageLength >> 16) & 0xFF);
-                bytes[2] = (byte)((messageLength >> 8) & 0xFF);
-                bytes[3] = (byte)(messageLength & 0xFF);
+                bytes[0] = (byte)((message.Length >> 24) & 0xFF);
+                bytes[1] = (byte)((message.Length >> 16) & 0xFF);
+                bytes[2] = (byte)((message.Length >> 8) & 0xFF);
+                bytes[3] = (byte)(message.Length & 0xFF);
 
                 IBuffer buffer = Windows.Security.Cryptography.CryptographicBuffer.CreateFromByteArray(bytes);
                 await socket.OutputStream.WriteAsync(buffer);
 
-                byte[] messageBytes = new byte[messageLength];
+                byte[] messageBytes = new byte[message.Length];
                 char[] messageChars = message.ToCharArray();
                 for (int i = 0; i < message.Length; i++)
                 {

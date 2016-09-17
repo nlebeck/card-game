@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Networking;
@@ -34,10 +35,11 @@ namespace UWPClient
         {
             string errorMessage = "";
 
+            await TcpMessager.BindMessageCallback(8079, HandleMessage);
+
             try
             {
-                TcpMessager tcpMessager = TcpMessager.GetTcpMessager(8079);
-                await tcpMessager.SendMessageAsync("Hello world!", this.hostNameTextBox.Text, int.Parse(this.portTextBox.Text));
+                await TcpMessager.SendMessageAsync("Hello world!", this.hostNameTextBox.Text, int.Parse(this.portTextBox.Text));
             }
             catch (Exception exception)
             {
@@ -45,6 +47,11 @@ namespace UWPClient
             }
 
             this.errorTextBlock.Text = errorMessage;
+        }
+
+        private void HandleMessage(string message)
+        {
+            this.responseTextBlock.Text = message;
         }
     }
 }
