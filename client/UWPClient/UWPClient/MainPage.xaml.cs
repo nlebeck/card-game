@@ -50,9 +50,9 @@ namespace UWPClient
             this.errorTextBlock.Text = errorMessage;
         }
 
-        private void HandleMessage(string message)
+        private void HandleMessage(string address, string message)
         {
-            this.responseTextBlock.Text = message;
+            this.responseTextBlock.Text = "Message from " + address + ": " + message;
         }
     }
 }

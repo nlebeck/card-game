@@ -8,7 +8,7 @@
     using System.Runtime.InteropServices.WindowsRuntime;
     using System.Threading.Tasks;
 
-    public delegate void MessageCallback(string message);
+    public delegate void MessageCallback(string address, string message);
 
     public class TcpMessager
     {
@@ -18,6 +18,8 @@
 
         private static async void HandleConnectionReceived(StreamSocketListener socketListener, StreamSocketListenerConnectionReceivedEventArgs args)
         {
+            string address = args.Socket.Information.RemoteAddress.CanonicalName;
+
             IBuffer lengthInputBuffer = new Windows.Storage.Streams.Buffer(4);
             IBuffer lengthOutputBuffer = await args.Socket.InputStream.ReadAsync(lengthInputBuffer, 4, InputStreamOptions.None);
             byte[] lengthBytes = WindowsRuntimeBufferExtensions.ToArray(lengthOutputBuffer);
@@ -34,7 +36,7 @@
             }
             string message = new string(messageChars);
 
-            callback(message);
+            callback(address, message);
         }
 
         public static async Task Init(int port)
@@ -50,7 +52,7 @@
             callback = cb;
         }
 
-        private static void defaultCallback(String message)
+        private static void defaultCallback(string address, string message)
         {
 
         }
