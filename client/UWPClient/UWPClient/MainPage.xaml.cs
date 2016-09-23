@@ -29,13 +29,14 @@ namespace UWPClient
         public MainPage()
         {
             this.InitializeComponent();
+
+            TcpMessager.Init(8079).Wait();
+            TcpMessager.BindMessageCallback(HandleMessage);
         }
 
         private async void button_Click(object sender, RoutedEventArgs e)
         {
             string errorMessage = "";
-
-            await TcpMessager.BindMessageCallback(8079, HandleMessage);
 
             try
             {

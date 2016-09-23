@@ -12,19 +12,11 @@
 
     public class TcpMessager
     {
-        private static ConcurrentDictionary<int, TcpMessager> tcpMessagerDictionary = new ConcurrentDictionary<int, TcpMessager>();
+        private static StreamSocketListener socketListener;
 
-        private StreamSocketListener socketListener;
+        private static MessageCallback callback;
 
-        private MessageCallback callback;
-
-        public TcpMessager(MessageCallback callback)
-        {
-            this.callback = callback;
-            this.socketListener = new StreamSocketListener();
-        }
-
-        public async void HandleConnectionReceived(StreamSocketListener socketListener, StreamSocketListenerConnectionReceivedEventArgs args)
+        private static async void HandleConnectionReceived(StreamSocketListener socketListener, StreamSocketListenerConnectionReceivedEventArgs args)
         {
             IBuffer lengthInputBuffer = new Windows.Storage.Streams.Buffer(4);
             IBuffer lengthOutputBuffer = await args.Socket.InputStream.ReadAsync(lengthInputBuffer, 4, InputStreamOptions.None);
@@ -45,20 +37,22 @@
             callback(message);
         }
 
-        public static async Task BindMessageCallback(int port, MessageCallback callback)
+        public static async Task Init(int port)
         {
-            if (!tcpMessagerDictionary.ContainsKey(port))
-            {
-                TcpMessager tcpMessager = new TcpMessager(callback);
-                await tcpMessager.socketListener.BindServiceNameAsync(port.ToString());
-                tcpMessager.socketListener.ConnectionReceived += tcpMessager.HandleConnectionReceived;
-                tcpMessagerDictionary[port] = tcpMessager;
-            }
-            else
-            {
-                TcpMessager tcpMessager = tcpMessagerDictionary[port];
-                tcpMessager.callback = callback;
-            }
+            socketListener = new StreamSocketListener();
+            await socketListener.BindServiceNameAsync(port.ToString());
+            callback = defaultCallback;
+            socketListener.ConnectionReceived += HandleConnectionReceived;
+        }
+
+        public static void BindMessageCallback(MessageCallback cb)
+        {
+            callback = cb;
+        }
+
+        private static void defaultCallback(String message)
+        {
+
         }
 
         public static async Task SendMessageAsync(string message, string hostname, int port)
