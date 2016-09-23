@@ -6,23 +6,28 @@ import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TcpMessager {
+        
+    private static ServerSocket serverSocket = null;
     
-    private static ConcurrentHashMap<Integer, TcpMessager> tcpMessagerMap = new ConcurrentHashMap<Integer, TcpMessager>();
+    public static void init(int listeningPort) throws IOException {
+        serverSocket = new ServerSocket(listeningPort);
+    }
     
-    private ServerSocket serverSocket;
-    
-    public static TcpMessager getTcpMessager(int listeningPort) throws IOException {
-        if (!tcpMessagerMap.containsKey(listeningPort)) {
-            tcpMessagerMap.put(listeningPort, new TcpMessager(listeningPort));
+    public static void startMessageLoop(MessageCallback callback) {
+        while(true) {
+            String message = null;
+            try {
+                message = receiveMessage();
+            }
+            catch (IOException e) {
+                System.err.println("Error receiving message: " + e);
+            }
+            
+            callback.callback(message);
         }
-        return tcpMessagerMap.get(listeningPort);
     }
     
-    private TcpMessager(int listeningPort) throws IOException {
-        this.serverSocket = new ServerSocket(listeningPort);
-    }
-    
-    public String receiveMessage() throws IOException {
+    private static String receiveMessage() throws IOException {
         Socket socket = serverSocket.accept();
                 
         byte[] messageLengthBytes = new byte[4];

@@ -2,6 +2,7 @@ package niellebeck.cardgameserver;
 
 import java.io.IOException;
 
+import niellebeck.cardgameserver.messaging.MessageCallback;
 import niellebeck.cardgameserver.messaging.TcpMessager;
 
 /**
@@ -14,31 +15,24 @@ public class CardGameServer
     
     public static void main( String[] args )
     {        
-        TcpMessager tcpMessager = null;
         try {
-            tcpMessager = TcpMessager.getTcpMessager(SERVER_PORT);
+            TcpMessager.init(SERVER_PORT);
         }
         catch (IOException e) {
             System.err.println("Error creating TcpMessager: " + e);
             System.exit(1);
         }
         
-        while (true) {
-            String message = null;
-            try {
-                message = tcpMessager.receiveMessage();
+        TcpMessager.startMessageLoop(new MessageCallback() {
+            public void callback(String message) {
+                System.out.println(message);
+                try {
+                    TcpMessager.sendMessage("Message received: " + message, "127.0.0.1", 8079);
+                }
+                catch (IOException e) {
+                    System.err.println("Error sending response: " + e);
+                }
             }
-            catch (IOException e) {
-                System.err.println("Error receiving message: " + e);
-            }
-            System.out.println(message);
-            
-            try {
-                TcpMessager.sendMessage("Message received: " + message, "127.0.0.1", 8079);
-            }
-            catch (IOException e) {
-                System.err.println("Error sending response: " + e);
-            }
-        }
+        });
     }
 }
