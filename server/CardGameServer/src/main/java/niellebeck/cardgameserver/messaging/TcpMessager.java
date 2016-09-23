@@ -16,34 +16,44 @@ public class TcpMessager {
     public static void startMessageLoop(MessageCallback callback) {
         while(true) {
             String message = null;
+            String address = null;
             try {
-                message = receiveMessage();
+                String[] result = receiveMessage();
+                address = result[0];
+                message = result[1];
             }
             catch (IOException e) {
                 System.err.println("Error receiving message: " + e);
             }
             
-            callback.callback(message);
+            callback.callback(address, message);
         }
     }
     
-    private static String receiveMessage() throws IOException {
+    private static String[] receiveMessage() throws IOException {
         Socket socket = serverSocket.accept();
-                
+        
+        String address = socket.getInetAddress().getHostAddress();
+        
         byte[] messageLengthBytes = new byte[4];
         socket.getInputStream().read(messageLengthBytes);
         int messageLength = (messageLengthBytes[0] << 24) | (messageLengthBytes[1] << 16) | (messageLengthBytes[2] << 8) | messageLengthBytes[3];
         
-        byte[] message = new byte[messageLength];
-        socket.getInputStream().read(message);
+        byte[] messageBytes = new byte[messageLength];
+        socket.getInputStream().read(messageBytes);
         char[] messageChars = new char[messageLength];
-        for (int i = 0; i < message.length; i++) {
-            messageChars[i] = (char)message[i];
+        for (int i = 0; i < messageBytes.length; i++) {
+            messageChars[i] = (char)messageBytes[i];
         }
+        String message = String.valueOf(messageChars, 0, messageChars.length);
         
         socket.close();
         
-        return String.valueOf(messageChars, 0, messageChars.length);
+        String[] result = new String[2];
+        result[0] = address;
+        result[1] = message;
+        
+        return result;
     }
     
     public static void sendMessage(String message, String hostname, int port) throws IOException {

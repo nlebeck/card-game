@@ -24,8 +24,8 @@ public class CardGameServer
         }
         
         TcpMessager.startMessageLoop(new MessageCallback() {
-            public void callback(String message) {
-                System.out.println(message);
+            public void callback(String address, String message) {
+                System.out.println("Message received from " + address + ": " + message);
                 try {
                     TcpMessager.sendMessage("Message received: " + message, "127.0.0.1", 8079);
                 }
