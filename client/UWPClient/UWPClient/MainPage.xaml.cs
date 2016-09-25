@@ -9,6 +9,7 @@ using Windows.Foundation.Collections;
 using Windows.Networking;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -26,9 +27,13 @@ namespace UWPClient
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private CoreDispatcher dispatcher;
+
         public MainPage()
         {
             this.InitializeComponent();
+
+            dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
 
             TcpMessager.Init(8079).Wait();
             TcpMessager.BindMessageCallback(HandleMessage);
@@ -50,9 +55,12 @@ namespace UWPClient
             this.errorTextBlock.Text = errorMessage;
         }
 
-        private void HandleMessage(string address, string message)
+        private async void HandleMessage(string address, string message)
         {
-            this.responseTextBlock.Text = "Message from " + address + ": " + message;
+            await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                this.responseTextBlock.Text = "Message from " + address + ": " + message;
+            });
         }
     }
 }
