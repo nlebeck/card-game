@@ -3,6 +3,7 @@
     using Windows.Networking;
     using Windows.Networking.Sockets;
     using Windows.Storage.Streams;
+    using Windows.UI.Core;
     using System;
     using System.Collections.Concurrent;
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -41,10 +42,12 @@
 
         public static async Task Init(int port)
         {
-            socketListener = new StreamSocketListener();
-            await socketListener.BindServiceNameAsync(port.ToString());
             callback = defaultCallback;
+
+            socketListener = new StreamSocketListener();
             socketListener.ConnectionReceived += HandleConnectionReceived;
+
+            await socketListener.BindServiceNameAsync(port.ToString());
         }
 
         public static void BindMessageCallback(MessageCallback cb)
