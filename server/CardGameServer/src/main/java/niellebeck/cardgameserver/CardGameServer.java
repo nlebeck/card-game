@@ -27,7 +27,7 @@ public class CardGameServer
             public void callback(String address, String message) {
                 System.out.println("Message received from " + address + ": " + message);
                 try {
-                    TcpMessager.sendMessage("Message received: " + message, "127.0.0.1", 8079);
+                    TcpMessager.sendMessage("Message received: " + message, address, 8079);
                 }
                 catch (IOException e) {
                     System.err.println("Error sending response: " + e);
