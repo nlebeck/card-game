@@ -1,38 +1,49 @@
 package niellebeck.cardgameserver.messaging;
 
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentHashMap;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Set;
+import java.nio.channels.Selector;
+import java.nio.channels.SelectionKey;
 
 public class TcpMessager {
-        
-    private static ServerSocket serverSocket = null;
+    
+    private static ServerSocketChannel serverSocketChannel = null;
+    private static SelectionKey serverSocketSelectionKey;
+    private static Selector selector = null;
     
     public static void init(int listeningPort) throws IOException {
-        serverSocket = new ServerSocket(listeningPort);
+        selector = Selector.open();
+        
+        serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.bind(new InetSocketAddress(listeningPort));
+        serverSocketChannel.configureBlocking(false);
+        
+        serverSocketSelectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
     }
     
-    public static void startMessageLoop(MessageCallback callback) {
+    public static void startMessageLoop(MessageCallback callback) throws IOException {
         while(true) {
-            String message = null;
-            String address = null;
-            try {
-                String[] result = receiveMessage();
-                address = result[0];
-                message = result[1];
+            selector.select();
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            for (SelectionKey key : selectedKeys) {
+                if (key.equals(serverSocketSelectionKey)) {
+                    SocketChannel socketChannel = serverSocketChannel.accept();
+                    
+                    String[] result = receiveMessage(socketChannel.socket());
+                    String address = result[0];
+                    String message = result[1];
+                    
+                    callback.callback(address, message);
+                }
             }
-            catch (IOException e) {
-                System.err.println("Error receiving message: " + e);
-            }
-            
-            callback.callback(address, message);
         }
     }
     
-    private static String[] receiveMessage() throws IOException {
-        Socket socket = serverSocket.accept();
-        
+    private static String[] receiveMessage(Socket socket) throws IOException {
         String address = socket.getInetAddress().getHostAddress();
         
         byte[] messageLengthBytes = new byte[4];

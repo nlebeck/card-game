@@ -23,16 +23,21 @@ public class CardGameServer
             System.exit(1);
         }
         
-        TcpMessager.startMessageLoop(new MessageCallback() {
-            public void callback(String address, String message) {
-                System.out.println("Message received from " + address + ": " + message);
-                try {
-                    TcpMessager.sendMessage("Message received: " + message, address, 8079);
+        try {
+            TcpMessager.startMessageLoop(new MessageCallback() {
+                public void callback(String address, String message) {
+                    System.out.println("Message received from " + address + ": " + message);
+                    try {
+                        TcpMessager.sendMessage("Message received: " + message, address, 8079);
+                    }
+                    catch (IOException e) {
+                        System.err.println("Error sending response: " + e);
+                    }
                 }
-                catch (IOException e) {
-                    System.err.println("Error sending response: " + e);
-                }
-            }
-        });
+            });
+        } catch (IOException e) {
+            System.err.println("Message loop error: " + e);
+            System.exit(1);
+        }
     }
 }
