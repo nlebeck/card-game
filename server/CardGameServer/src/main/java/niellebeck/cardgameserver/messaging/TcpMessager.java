@@ -16,14 +16,12 @@ import java.nio.channels.SelectionKey;
 public class TcpMessager {
     private static ServerSocketChannel serverSocketChannel = null;
     private static SelectionKey serverSocketSelectionKey;
-    private static List<SelectionKey> clientSocketSelectionKeys;
     private static Selector selector = null;
     
-    private static Map<SocketAddress, ClientInfo> clientInfoMap;
+    private static ClientInfoContainer clientInfoContainer;
     
     public static void init(int listeningPort) throws IOException {
-        clientSocketSelectionKeys = new ArrayList<SelectionKey>();
-        clientInfoMap = new HashMap<SocketAddress, ClientInfo>();
+        clientInfoContainer = new ClientInfoContainer();
         
         selector = Selector.open();
         
@@ -42,10 +40,14 @@ public class TcpMessager {
                     SocketChannel socketChannel = serverSocketChannel.accept();
                     socketChannel.configureBlocking(false);
                     SelectionKey clientKey = socketChannel.register(selector, SelectionKey.OP_READ);
-                    clientSocketSelectionKeys.add(clientKey);
+                    
+                    ClientInfo clientInfo = new ClientInfo(clientKey);
+                    if (!clientInfoContainer.containsSocketAddress(clientInfo.getAddress())) {
+                        clientInfoContainer.add(clientInfo);
+                    }
                 }
-                else if (clientSocketSelectionKeys.contains(key)) {
-                    receiveMessage(((SocketChannel)key.channel()), callback);
+                else if (clientInfoContainer.containsSelectionKey(key)) {
+                    readClientData(clientInfoContainer.get(key), callback);
                 }
             }
             selector.selectedKeys().clear();
@@ -53,14 +55,8 @@ public class TcpMessager {
 
     }
     
-    private static void receiveMessage(SocketChannel socketChannel, MessageCallback callback) throws IOException {
-        SocketAddress address = socketChannel.getRemoteAddress();
-        
-        if (!clientInfoMap.containsKey(address)) {
-            clientInfoMap.put(address, new ClientInfo());
-        }
-        
-        ClientInfo clientInfo = clientInfoMap.get(address);
+    private static void readClientData(ClientInfo clientInfo, MessageCallback callback) throws IOException {
+        SocketChannel socketChannel = (SocketChannel)clientInfo.key.channel();
         
         if (clientInfo.state == ClientState.IDLE) {
             clientInfo.state = ClientState.SENDING_LENGTH;
@@ -96,7 +92,7 @@ public class TcpMessager {
                 }
                 String message = String.valueOf(messageChars, 0, messageChars.length);
                 
-                String addressStr = address.toString().substring(1).split(":")[0];
+                String addressStr = socketChannel.getRemoteAddress().toString().substring(1).split(":")[0];
                 callback.callback(addressStr, message);
                 
                 socketChannel.close();
