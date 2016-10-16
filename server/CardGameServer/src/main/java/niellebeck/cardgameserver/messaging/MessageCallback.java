@@ -1,5 +1,7 @@
 package niellebeck.cardgameserver.messaging;
 
+import java.net.SocketAddress;
+
 public interface MessageCallback {
-    public void callback(String address, String message);
+    public void callback(SocketAddress address, String message);
 }

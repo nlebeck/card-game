@@ -6,11 +6,8 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.nio.channels.Selector;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 public class TcpMessager {
@@ -92,8 +89,7 @@ public class TcpMessager {
                 }
                 String message = String.valueOf(messageChars, 0, messageChars.length);
                 
-                String addressStr = socketChannel.getRemoteAddress().toString().substring(1).split(":")[0];
-                callback.callback(addressStr, message);
+                callback.callback(socketChannel.getRemoteAddress(), message);
                 
                 socketChannel.close();
                 
@@ -105,16 +101,21 @@ public class TcpMessager {
         }
     }
     
-    public static void sendMessage(String message, String hostname, int port) throws IOException {
-        Socket socket = new Socket(hostname, port);
+    public static void sendMessage(SocketAddress address, String message) throws IOException {
+        ClientInfo clientInfo = clientInfoContainer.get(address);
+        SocketChannel socketChannel = (SocketChannel)clientInfo.key.channel();
         
-        byte[] bytes = new byte[4];
-        bytes[0] = (byte)((message.length() >> 24) & 0xFF);
-        bytes[1] = (byte)((message.length() >> 16) & 0xFF);
-        bytes[2] = (byte)((message.length() >> 8) & 0xFF);
-        bytes[3] = (byte)(message.length() & 0xFF);
+        byte[] messageLengthBytes = new byte[4];
+        messageLengthBytes[0] = (byte)((message.length() >> 24) & 0xFF);
+        messageLengthBytes[1] = (byte)((message.length() >> 16) & 0xFF);
+        messageLengthBytes[2] = (byte)((message.length() >> 8) & 0xFF);
+        messageLengthBytes[3] = (byte)(message.length() & 0xFF);
         
-        socket.getOutputStream().write(bytes);
+        ByteBuffer messageLengthBuffer = ByteBuffer.allocate(messageLengthBytes.length);
+        messageLengthBuffer.put(messageLengthBytes);
+        messageLengthBuffer.flip();
+        
+        socketChannel.write(messageLengthBuffer);
         
         byte[] messageBytes = new byte[message.length()];
         char[] messageChars = message.toCharArray();
@@ -123,8 +124,12 @@ public class TcpMessager {
             messageBytes[i] = (byte)messageChars[i];
         }
         
-        socket.getOutputStream().write(messageBytes);
+        ByteBuffer messageBuffer = ByteBuffer.allocate(messageBytes.length);
+        messageBuffer.put(messageBytes);
+        messageBuffer.flip();
         
-        socket.close();
+        socketChannel.write(messageBuffer);
+        
+        socketChannel.close();
     }
 }

@@ -1,6 +1,7 @@
 package niellebeck.cardgameserver;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 
 import niellebeck.cardgameserver.messaging.MessageCallback;
 import niellebeck.cardgameserver.messaging.TcpMessager;
@@ -25,10 +26,12 @@ public class CardGameServer
         
         try {
             TcpMessager.startMessageLoop(new MessageCallback() {
-                public void callback(String address, String message) {
-                    System.out.println("Message received from " + address + ": " + message);
+                public void callback(SocketAddress address, String message) {
+                    String addressStr = address.toString().substring(1).split(":")[0];
+                    
+                    System.out.println("Message received from " + addressStr + ": " + message);
                     try {
-                        TcpMessager.sendMessage("Message received: " + message, address, 8079);
+                        TcpMessager.sendMessage(address, "Message received: " + message);
                     }
                     catch (IOException e) {
                         System.err.println("Error sending response: " + e);
