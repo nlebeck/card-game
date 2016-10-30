@@ -14,16 +14,14 @@ public class ClientInfo {
     public ByteBuffer messageBuffer;
     public int messageLength;
     public SelectionKey key;
+    public SocketAddress address;
     
-    public ClientInfo(SelectionKey key) {
+    public ClientInfo(SelectionKey key, SocketAddress address) {
         this.state = ClientState.IDLE;
         this.messageLengthBuffer = ByteBuffer.allocate(4);
         this.messageBuffer = ByteBuffer.allocate(MAX_MESSAGE_LENGTH);
         this.messageLength = -1;
         this.key = key;
-    }
-    
-    public SocketAddress getAddress() throws IOException {
-        return ((SocketChannel)key.channel()).getRemoteAddress();
+        this.address = address;
     }
 }

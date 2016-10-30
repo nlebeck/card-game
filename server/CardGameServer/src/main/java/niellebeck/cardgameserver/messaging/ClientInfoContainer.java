@@ -1,9 +1,7 @@
 package niellebeck.cardgameserver.messaging;
 
-import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,22 +22,22 @@ public class ClientInfoContainer {
         keyInfoMap = new HashMap<SelectionKey, ClientInfo>();
     }
     
-    public void add(ClientInfo info) throws IOException {        
-        if (addressInfoMap.containsKey(info.getAddress())) {
-            throw new IOException("A client with the same remote address already exists");
+    public void add(ClientInfo info) {
+        if (addressInfoMap.containsKey(info.address)) {
+            throw new RuntimeException("Cannot add client: a client with the same remote address already exists");
         }
         else if (keyInfoMap.containsKey(info.key)) {
-            throw new IOException("A client with the same selection key already exists");
+            throw new RuntimeException("Cannot add client: a client with the same selection key already exists");
         }
         
         infoList.add(info);
-        addressInfoMap.put(info.getAddress(), info);
+        addressInfoMap.put(info.address, info);
         keyInfoMap.put(info.key, info);
     }
     
-    public void remove(ClientInfo info) throws IOException {
+    public void remove(ClientInfo info) {
         infoList.remove(info);
-        addressInfoMap.remove(((SocketChannel)info.key.channel()).getRemoteAddress(), info);
+        addressInfoMap.remove(info.address, info);
         keyInfoMap.remove(info.key, info);
     }
     

@@ -8,6 +8,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.Selector;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 
 public class TcpMessager {
@@ -29,17 +30,31 @@ public class TcpMessager {
         serverSocketSelectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
     }
     
-    public static void startMessageLoop(MessageCallback callback) throws IOException {
+    public static void startMessageLoop(MessageCallback callback) {
         while(true) {
-            selector.select();
+            try {
+                selector.select();
+            } catch (IOException e) {
+                logError(e, "Error calling select()");
+            }
             for (SelectionKey key : selector.selectedKeys()) {
                 if (key.equals(serverSocketSelectionKey)) {
-                    SocketChannel socketChannel = serverSocketChannel.accept();
-                    socketChannel.configureBlocking(false);
-                    SelectionKey clientKey = socketChannel.register(selector, SelectionKey.OP_READ);
+                    SocketChannel socketChannel = null;
+                    SelectionKey clientKey = null;
+                    SocketAddress clientAddress = null;
                     
-                    ClientInfo clientInfo = new ClientInfo(clientKey);
-                    if (!clientInfoContainer.containsSocketAddress(clientInfo.getAddress())) {
+                    try {
+                        socketChannel = serverSocketChannel.accept();
+                        socketChannel.configureBlocking(false);
+                        clientKey = socketChannel.register(selector, SelectionKey.OP_READ);
+                        clientAddress = socketChannel.getRemoteAddress();
+                    }
+                    catch (IOException e) {
+                        logError(e, "Error accepting client connection");
+                    }
+                    
+                    ClientInfo clientInfo = new ClientInfo(clientKey, clientAddress);
+                    if (!clientInfoContainer.containsSocketAddress(clientInfo.address)) {
                         clientInfoContainer.add(clientInfo);
                     }
                 }
@@ -52,7 +67,16 @@ public class TcpMessager {
 
     }
     
-    private static void readClientData(ClientInfo clientInfo, MessageCallback callback) throws IOException {
+    private static void logError(Exception e, String message) {
+        System.err.println(message + ": " + e.toString());
+    }
+    
+    private static void handleDisconnectedClient(ClientInfo clientInfo) {
+        clientInfo.key.cancel();
+        clientInfoContainer.remove(clientInfo);
+    }
+    
+    private static void readClientData(ClientInfo clientInfo, MessageCallback callback) {
         SocketChannel socketChannel = (SocketChannel)clientInfo.key.channel();
         
         if (clientInfo.state == ClientState.IDLE) {
@@ -60,7 +84,13 @@ public class TcpMessager {
         }
         
         if (clientInfo.state == ClientState.SENDING_LENGTH) {
-            socketChannel.read(clientInfo.messageLengthBuffer);
+            try {
+                socketChannel.read(clientInfo.messageLengthBuffer);
+            }
+            catch (IOException e) {
+                handleDisconnectedClient(clientInfo);
+            }
+            
             if (clientInfo.messageLengthBuffer.position() == 4) {
                 clientInfo.messageLengthBuffer.flip();
                 byte[] messageLengthBytes = new byte[4];
@@ -68,7 +98,7 @@ public class TcpMessager {
                 
                 int messageLength = (messageLengthBytes[0] << 24) | (messageLengthBytes[1] << 16) | (messageLengthBytes[2] << 8) | messageLengthBytes[3];
                 if (messageLength > ClientInfo.MAX_MESSAGE_LENGTH) {
-                    throw new IOException("Oversize message (" + messageLength + " bytes)");
+                    messageLength = ClientInfo.MAX_MESSAGE_LENGTH;
                 }
                 
                 clientInfo.messageLength = messageLength;
@@ -77,7 +107,13 @@ public class TcpMessager {
         }
         
         if (clientInfo.state == ClientState.SENDING_MESSAGE) {
-            socketChannel.read(clientInfo.messageBuffer);
+            try {
+                socketChannel.read(clientInfo.messageBuffer);
+            }
+            catch (IOException e) {
+                handleDisconnectedClient(clientInfo);
+            }
+            
             if (clientInfo.messageBuffer.position() == clientInfo.messageLength) {
                 clientInfo.messageBuffer.flip();
                 byte[] messageBytes = new byte[clientInfo.messageLength];
@@ -89,9 +125,15 @@ public class TcpMessager {
                 }
                 String message = String.valueOf(messageChars, 0, messageChars.length);
                 
-                callback.callback(socketChannel.getRemoteAddress(), message);
+                SocketAddress socketAddress = null;
+                try {
+                    socketAddress = socketChannel.getRemoteAddress();
+                }
+                catch (IOException e) {
+                    logError(e, "Error getting remote address of client");
+                }
                 
-                socketChannel.close();
+                callback.callback(socketAddress, message);
                 
                 clientInfo.state = ClientState.IDLE;
                 clientInfo.messageLengthBuffer.clear();
@@ -101,7 +143,7 @@ public class TcpMessager {
         }
     }
     
-    public static void sendMessage(SocketAddress address, String message) throws IOException {
+    public static void sendMessage(SocketAddress address, String message) {
         ClientInfo clientInfo = clientInfoContainer.get(address);
         SocketChannel socketChannel = (SocketChannel)clientInfo.key.channel();
         
@@ -115,7 +157,12 @@ public class TcpMessager {
         messageLengthBuffer.put(messageLengthBytes);
         messageLengthBuffer.flip();
         
-        socketChannel.write(messageLengthBuffer);
+        try {
+            socketChannel.write(messageLengthBuffer);
+        }
+        catch (IOException e) {
+            handleDisconnectedClient(clientInfo);
+        }
         
         byte[] messageBytes = new byte[message.length()];
         char[] messageChars = message.toCharArray();
@@ -128,8 +175,11 @@ public class TcpMessager {
         messageBuffer.put(messageBytes);
         messageBuffer.flip();
         
-        socketChannel.write(messageBuffer);
-        
-        socketChannel.close();
+        try {
+            socketChannel.write(messageBuffer);
+        }
+        catch (IOException e) {
+            handleDisconnectedClient(clientInfo);
+        }
     }
 }

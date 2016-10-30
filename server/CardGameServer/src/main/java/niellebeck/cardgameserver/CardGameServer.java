@@ -24,23 +24,12 @@ public class CardGameServer
             System.exit(1);
         }
         
-        try {
-            TcpMessager.startMessageLoop(new MessageCallback() {
-                public void callback(SocketAddress address, String message) {
-                    String addressStr = address.toString().substring(1).split(":")[0];
-                    
-                    System.out.println("Message received from " + addressStr + ": " + message);
-                    try {
-                        TcpMessager.sendMessage(address, "Message received: " + message);
-                    }
-                    catch (IOException e) {
-                        System.err.println("Error sending response: " + e);
-                    }
-                }
-            });
-        } catch (IOException e) {
-            System.err.println("Message loop error: " + e);
-            System.exit(1);
-        }
+        TcpMessager.startMessageLoop(new MessageCallback() {
+            public void callback(SocketAddress address, String message) {
+                String addressStr = address.toString().substring(1).split(":")[0];
+                System.out.println("Message received from " + addressStr + ": " + message);
+                TcpMessager.sendMessage(address, "Message received: " + message);
+            }
+        });
     }
 }
