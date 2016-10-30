@@ -28,24 +28,30 @@ namespace UWPClient
     public sealed partial class MainPage : Page
     {
         private CoreDispatcher dispatcher;
+        private TcpMessageClient client;
 
         public MainPage()
         {
             this.InitializeComponent();
 
             dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
-
-            TcpMessager.Init(8079).Wait();
-            TcpMessager.BindMessageCallback(HandleMessage);
+            client = null;
         }
 
         private async void button_Click(object sender, RoutedEventArgs e)
         {
             string errorMessage = "";
 
+            if (client == null)
+            {
+                client = new TcpMessageClient();
+                await client.Connect(this.hostNameTextBox.Text, this.portTextBox.Text);
+                client.StartReadLoop(HandleMessage);
+            }
+
             try
             {
-                await TcpMessager.SendMessageAsync("Hello world!", this.hostNameTextBox.Text, int.Parse(this.portTextBox.Text));
+                await client.SendMessageAsync("Hello world from a new client!", HandleMessage);
             }
             catch (Exception exception)
             {
