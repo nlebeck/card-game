@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using UWPClient.Messages;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Networking;
@@ -28,7 +29,7 @@ namespace UWPClient
     public sealed partial class MainPage : Page
     {
         private CoreDispatcher dispatcher;
-        private TcpMessageClient client;
+        private JsonMessageClient client;
 
         public MainPage()
         {
@@ -44,14 +45,16 @@ namespace UWPClient
 
             if (client == null)
             {
-                client = new TcpMessageClient();
+                client = new JsonMessageClient();
                 await client.Connect(this.hostNameTextBox.Text, this.portTextBox.Text);
                 client.StartReadLoop(HandleMessage);
             }
 
             try
             {
-                await client.SendMessageAsync("Hello world from a new client!");
+                LoginMessage loginMessage = new LoginMessage();
+                loginMessage.messageType = loginMessage.GetType().Name;
+                await client.SendMessageAsync(loginMessage);
             }
             catch (Exception exception)
             {
@@ -61,11 +64,11 @@ namespace UWPClient
             this.errorTextBlock.Text = errorMessage;
         }
 
-        private async void HandleMessage(string message)
+        private async void HandleMessage(JsonMessage jsonMessage)
         {
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                this.responseTextBlock.Text = "Message from server: " + message;
+                this.responseTextBlock.Text = "Message received from server of type " + jsonMessage.messageType;
             });
         }
     }

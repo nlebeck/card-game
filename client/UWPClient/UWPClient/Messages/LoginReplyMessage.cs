@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace UWPClient.Messages
 {
-    public class JsonMessage
+    public class LoginReplyMessage : JsonMessage
     {
-        public string messageType;
+        public string reply;
     }
 }
