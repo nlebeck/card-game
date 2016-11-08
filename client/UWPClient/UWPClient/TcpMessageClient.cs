@@ -10,7 +10,7 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    public delegate void MessageCallback(string address, string message);
+    public delegate void MessageCallback(string message);
 
     public class TcpMessageClient
     {
@@ -50,15 +50,13 @@
                         messageChars[i] = (char)messageBytes[i];
                     }
                     string message = new string(messageChars);
-
-                    string address = socket.Information.RemoteAddress.CanonicalName;
-                    callback(address, message);
+                    callback(message);
                 }
             }, TaskCreationOptions.LongRunning);
             readLoopTask.Start();
         }
 
-        public async Task SendMessageAsync(string message, MessageCallback cb)
+        public async Task SendMessageAsync(string message)
         {
             byte[] messageLengthBytes = new byte[4];
             messageLengthBytes[0] = (byte)((message.Length >> 24) & 0xFF);

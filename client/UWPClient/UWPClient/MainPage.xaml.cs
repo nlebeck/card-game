@@ -51,7 +51,7 @@ namespace UWPClient
 
             try
             {
-                await client.SendMessageAsync("Hello world from a new client!", HandleMessage);
+                await client.SendMessageAsync("Hello world from a new client!");
             }
             catch (Exception exception)
             {
@@ -61,11 +61,11 @@ namespace UWPClient
             this.errorTextBlock.Text = errorMessage;
         }
 
-        private async void HandleMessage(string address, string message)
+        private async void HandleMessage(string message)
         {
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                this.responseTextBlock.Text = "Message from " + address + ": " + message;
+                this.responseTextBlock.Text = "Message from server: " + message;
             });
         }
     }
