@@ -20,7 +20,7 @@ public class CardGameServer
             TcpMessenger.init(SERVER_PORT);
         }
         catch (IOException e) {
-            System.err.println("Error creating TcpMessager: " + e);
+            System.err.println("Error creating TcpMessenger: " + e);
             System.exit(1);
         }
         
