@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 
-public class TcpMessager {
+public class TcpMessenger {
     private static ServerSocketChannel serverSocketChannel = null;
     private static SelectionKey serverSocketSelectionKey;
     private static Selector selector = null;
