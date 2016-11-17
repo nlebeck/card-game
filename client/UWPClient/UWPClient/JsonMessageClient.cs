@@ -30,7 +30,7 @@
         {
             tcpMessageClient.StartReadLoop((string message) =>
             {
-                JsonMessage jsonMessage = JsonConvert.DeserializeObject<JsonMessage>(message);
+                JsonMessage jsonMessage = JsonMessageFactory.DeserializeJsonMessage(message);
                 callback(jsonMessage);
             });
         }

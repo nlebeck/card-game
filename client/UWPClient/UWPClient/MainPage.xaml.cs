@@ -52,8 +52,7 @@ namespace UWPClient
 
             try
             {
-                LoginMessage loginMessage = new LoginMessage();
-                loginMessage.messageType = loginMessage.GetType().Name;
+                LoginMessage loginMessage = JsonMessageFactory.CreateLoginMessage("Test user 3");
                 await client.SendMessageAsync(loginMessage);
             }
             catch (Exception exception)
@@ -66,9 +65,25 @@ namespace UWPClient
 
         private async void HandleMessage(JsonMessage jsonMessage)
         {
+            string text = "";
+
+            if (jsonMessage.GetType() == typeof(LobbyStateMessage))
+            {
+                LobbyStateMessage lobbyStateMessage = (LobbyStateMessage) jsonMessage;
+                text = "Games:\n";
+                for (int i = 0; i < lobbyStateMessage.gameNames.Length; i++)
+                {
+                    text += lobbyStateMessage.gameNames[i] + "\n";
+                }
+            }
+            else
+            {
+                text = "Message received from server of type " + jsonMessage.messageType;
+            }
+
             await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                this.responseTextBlock.Text = "Message received from server of type " + jsonMessage.messageType;
+                this.responseTextBlock.Text = text;
             });
         }
     }
