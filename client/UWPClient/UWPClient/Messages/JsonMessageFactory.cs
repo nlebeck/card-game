@@ -30,12 +30,13 @@
             return loginMessage;
         }
 
-        public static LobbyStateMessage CreateLobbyStateMessage(string[] gameNames, int[] gameStatuses, string[] users)
+        public static LobbyStateMessage CreateLobbyStateMessage(string[] gameNames, int[] gameStatuses, int[] gamePlayerCounts, string[] users)
         {
             LobbyStateMessage lobbyStateMessage = new LobbyStateMessage();
             setMessageType(lobbyStateMessage);
             lobbyStateMessage.gameNames = gameNames;
             lobbyStateMessage.gameStatuses = gameStatuses;
+            lobbyStateMessage.gamePlayerCounts = gamePlayerCounts;
             lobbyStateMessage.users = users;
             return lobbyStateMessage;
         }

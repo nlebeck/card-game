@@ -25,11 +25,12 @@ public class JsonMessageFactory {
         return loginMessage;
     }
     
-    public static LobbyStateMessage createLobbyStateMessage(String[] gameNames, int[] gameStatuses, String[] users) {
+    public static LobbyStateMessage createLobbyStateMessage(String[] gameNames, int[] gameStatuses, int[] gamePlayerCounts, String[] users) {
         LobbyStateMessage lobbyStateMessage = new LobbyStateMessage();
         setMessageType(lobbyStateMessage);
         lobbyStateMessage.gameNames = gameNames;
         lobbyStateMessage.gameStatuses = gameStatuses;
+        lobbyStateMessage.gamePlayerCounts = gamePlayerCounts;
         lobbyStateMessage.users = users;
         return lobbyStateMessage;
     }
