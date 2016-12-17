@@ -3,12 +3,15 @@ package niellebeck.cardgameserver;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import niellebeck.cardgameserver.messages.JsonMessage;
 import niellebeck.cardgameserver.messages.JsonMessageFactory;
 import niellebeck.cardgameserver.messages.LobbyStateMessage;
 import niellebeck.cardgameserver.messages.LoginMessage;
+import niellebeck.cardgameserver.messages.LoginReplyMessage;
 import niellebeck.cardgameserver.messaging.JsonMessageCallback;
 import niellebeck.cardgameserver.messaging.JsonMessenger;
 
@@ -21,7 +24,7 @@ public class CardGameServer
     private static final int SERVER_PORT = 8080;
     
     private static List<Game> games;
-    private static List<String> users;
+    private static Set<String> users;
     
     public static void main( String[] args )
     {        
@@ -34,7 +37,7 @@ public class CardGameServer
         }
         
         games = new ArrayList<Game>();
-        users = new ArrayList<String>();
+        users = new HashSet<String>();
         
         JsonMessenger.startMessageLoop(new JsonMessageCallback() {
             public void callback(SocketAddress address, JsonMessage jsonMessage) {
@@ -43,9 +46,16 @@ public class CardGameServer
                 
                 if (jsonMessage.messageType.equals("LoginMessage")) {
                     LoginMessage loginMessage = (LoginMessage)jsonMessage;
-                    
                     String userName = loginMessage.userName;
-                    users.add(userName);
+                    
+                    int response = 1;
+                    if (!users.contains(userName)) {
+                        users.add(userName);
+                        response = 0;
+                    }
+                    
+                    LoginReplyMessage loginReplyMessage = JsonMessageFactory.createLoginReplyMessage(response);
+                    JsonMessenger.sendMessage(address, loginReplyMessage);
                     
                     LobbyStateMessage lobbyStateMessage = generateLobbyStateMessage();
                     JsonMessenger.sendMessage(address, lobbyStateMessage);

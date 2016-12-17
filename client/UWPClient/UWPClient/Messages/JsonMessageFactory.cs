@@ -14,6 +14,10 @@
             {
                 return JsonConvert.DeserializeObject<LoginMessage>(message);
             }
+            else if (messageType.Equals("LoginReplyMessage"))
+            {
+                return JsonConvert.DeserializeObject<LoginReplyMessage>(message);
+            }
             else if (messageType.Equals("LobbyStateMessage"))
             {
                 return JsonConvert.DeserializeObject<LobbyStateMessage>(message);
@@ -28,6 +32,14 @@
             setMessageType(loginMessage);
             loginMessage.userName = userName;
             return loginMessage;
+        }
+
+        public static LoginReplyMessage CreateLoginReplyMessage(int response)
+        {
+            LoginReplyMessage loginReplyMessage = new LoginReplyMessage();
+            setMessageType(loginReplyMessage);
+            loginReplyMessage.response = response;
+            return loginReplyMessage;
         }
 
         public static LobbyStateMessage CreateLobbyStateMessage(string[] gameNames, int[] gameStatuses, int[] gamePlayerCounts, string[] users)

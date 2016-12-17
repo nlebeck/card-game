@@ -88,6 +88,18 @@ namespace UWPClient
                     text += lobbyStateMessage.users[i];
                 }
             }
+            else if (jsonMessage.GetType() == typeof(LoginReplyMessage))
+            {
+                LoginReplyMessage loginReplyMessage = (LoginReplyMessage)jsonMessage;
+                if (loginReplyMessage.response == 0)
+                {
+                    text = "Login successful";
+                }
+                else
+                {
+                    text = "Login failed";
+                }
+            }
             else
             {
                 text = "Message received from server of type " + jsonMessage.messageType;

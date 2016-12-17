@@ -11,6 +11,9 @@ public class JsonMessageFactory {
         if (messageType.equals("LoginMessage")) {
             return gson.fromJson(message, LoginMessage.class);
         }
+        else if (messageType.equals("LoginReplyMessage")) {
+            return gson.fromJson(message, LoginReplyMessage.class);
+        }
         else if (messageType.equals("LobbyStateMessage")) {
             return gson.fromJson(message, LobbyStateMessage.class);
         }
@@ -23,6 +26,13 @@ public class JsonMessageFactory {
         setMessageType(loginMessage);
         loginMessage.userName = userName;
         return loginMessage;
+    }
+    
+    public static LoginReplyMessage createLoginReplyMessage(int response) {
+        LoginReplyMessage loginReplyMessage = new LoginReplyMessage();
+        setMessageType(loginReplyMessage);
+        loginReplyMessage.response = response;
+        return loginReplyMessage;
     }
     
     public static LobbyStateMessage createLobbyStateMessage(String[] gameNames, int[] gameStatuses, int[] gamePlayerCounts, String[] users) {

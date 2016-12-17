@@ -103,6 +103,7 @@
     <Compile Include="Messages\JsonMessageFactory.cs" />
     <Compile Include="Messages\LobbyStateMessage.cs" />
     <Compile Include="Messages\LoginMessage.cs" />
+    <Compile Include="Messages\LoginReplyMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TcpMessageClient.cs" />
   </ItemGroup>
