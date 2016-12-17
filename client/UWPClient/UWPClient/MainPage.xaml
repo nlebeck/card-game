@@ -8,13 +8,15 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Button x:Name="button" Content="Send message" HorizontalAlignment="Left" Height="58" Margin="50,195,0,0" VerticalAlignment="Top" Width="169" Click="button_Click"/>
+        <Button x:Name="button" Content="Login" HorizontalAlignment="Left" Height="33" Margin="134,250,0,0" VerticalAlignment="Top" Width="79" Click="button_Click"/>
         <TextBlock x:Name="responseLabelTextBlock" HorizontalAlignment="Left" Height="36" Margin="50,360,0,0" TextWrapping="Wrap" Text="Response:" VerticalAlignment="Top" Width="79"/>
         <TextBlock x:Name="responseTextBlock" HorizontalAlignment="Left" Height="93" Margin="134,360,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="216"/>
-        <TextBox x:Name="portTextBox" HorizontalAlignment="Left" Height="0" Margin="219,290,0,0" TextWrapping="Wrap" Text="8080" VerticalAlignment="Top" Width="131"/>
-        <TextBox x:Name="hostNameTextBox" HorizontalAlignment="Left" Height="32" Margin="50,290,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="164"/>
+        <TextBox x:Name="serverTextBox" HorizontalAlignment="Left" Height="32" Margin="153,140,0,0" TextWrapping="Wrap" Text="127.0.0.1:8080" VerticalAlignment="Top" Width="119"/>
         <TextBlock x:Name="errorLabelTextBlock" HorizontalAlignment="Left" Height="36" Margin="50,458,0,0" TextWrapping="Wrap" Text="Error:" VerticalAlignment="Top" Width="79"/>
         <TextBlock x:Name="errorTextBlock" HorizontalAlignment="Left" Height="172" Margin="134,458,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="216"/>
+        <TextBlock x:Name="serverLabelTextBlock" HorizontalAlignment="Left" Height="32" Margin="98,140,0,0" TextWrapping="Wrap" Text="Server" VerticalAlignment="Top" Width="50"/>
+        <TextBox x:Name="userNameTextBox" HorizontalAlignment="Left" Height="5" Margin="153,177,0,0" TextWrapping="Wrap" Text="TestUser1" VerticalAlignment="Top" Width="119"/>
+        <TextBlock x:Name="userNameLabelTextBlock" HorizontalAlignment="Left" Height="32" Margin="73,177,0,0" TextWrapping="Wrap" Text="User name" VerticalAlignment="Top" Width="80"/>
 
     </Grid>
 </Page>

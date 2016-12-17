@@ -46,13 +46,17 @@ namespace UWPClient
             if (client == null)
             {
                 client = new JsonMessageClient();
-                await client.Connect(this.hostNameTextBox.Text, this.portTextBox.Text);
+                string serverInfo = serverTextBox.Text;
+                string[] serverInfoSplit = serverInfo.Split(new char[] { ':' });
+                string hostName = serverInfoSplit[0];
+                string port = serverInfoSplit[1];
+                await client.Connect(hostName, port);
                 client.StartReadLoop(HandleMessage);
             }
 
             try
             {
-                LoginMessage loginMessage = JsonMessageFactory.CreateLoginMessage("Test user 3");
+                LoginMessage loginMessage = JsonMessageFactory.CreateLoginMessage("TestUser1");
                 await client.SendMessageAsync(loginMessage);
             }
             catch (Exception exception)
@@ -73,7 +77,15 @@ namespace UWPClient
                 text = "Games:\n";
                 for (int i = 0; i < lobbyStateMessage.gameNames.Length; i++)
                 {
-                    text += lobbyStateMessage.gameNames[i] + "\n";
+                    text += lobbyStateMessage.gameNames[i]
+                        + " players: " + lobbyStateMessage.gamePlayerCounts[i]
+                        + " status: " + (lobbyStateMessage.gameStatuses[i] == 1 ? "started" : "not started")
+                        + "\n";
+                }
+                text += "Users:\n";
+                for (int i = 0; i < lobbyStateMessage.users.Length; i++)
+                {
+                    text += lobbyStateMessage.users[i];
                 }
             }
             else
