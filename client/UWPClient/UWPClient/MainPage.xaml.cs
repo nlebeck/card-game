@@ -45,13 +45,14 @@ namespace UWPClient
 
             if (client == null)
             {
-                client = new JsonMessageClient();
+                client = JsonMessageClient.GetSingleton();
                 string serverInfo = serverTextBox.Text;
                 string[] serverInfoSplit = serverInfo.Split(new char[] { ':' });
                 string hostName = serverInfoSplit[0];
                 string port = serverInfoSplit[1];
                 await client.Connect(hostName, port);
-                client.StartReadLoop(HandleMessage);
+                client.StartReceivingMessages();
+                client.RegisterCallback(HandleMessage);
             }
 
             try
@@ -71,29 +72,16 @@ namespace UWPClient
         {
             string text = "";
 
-            if (jsonMessage.GetType() == typeof(LobbyStateMessage))
-            {
-                LobbyStateMessage lobbyStateMessage = (LobbyStateMessage) jsonMessage;
-                text = "Games:\n";
-                for (int i = 0; i < lobbyStateMessage.gameNames.Length; i++)
-                {
-                    text += lobbyStateMessage.gameNames[i]
-                        + " players: " + lobbyStateMessage.gamePlayerCounts[i]
-                        + " status: " + (lobbyStateMessage.gameStatuses[i] == 1 ? "started" : "not started")
-                        + "\n";
-                }
-                text += "Users:\n";
-                for (int i = 0; i < lobbyStateMessage.users.Length; i++)
-                {
-                    text += lobbyStateMessage.users[i];
-                }
-            }
-            else if (jsonMessage.GetType() == typeof(LoginReplyMessage))
+            if (jsonMessage.GetType() == typeof(LoginReplyMessage))
             {
                 LoginReplyMessage loginReplyMessage = (LoginReplyMessage)jsonMessage;
                 if (loginReplyMessage.response == 0)
                 {
-                    text = "Login successful";
+                    await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        client.DeregisterCallback();
+                        this.Frame.Navigate(typeof(LobbyPage));
+                    });
                 }
                 else
                 {

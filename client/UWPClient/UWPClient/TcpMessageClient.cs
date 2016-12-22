@@ -3,7 +3,6 @@
     using Windows.Networking;
     using Windows.Networking.Sockets;
     using Windows.Storage.Streams;
-    using Windows.UI.Core;
     using System;
     using System.Collections.Concurrent;
     using System.Runtime.InteropServices.WindowsRuntime;
@@ -15,10 +14,16 @@
     public class TcpMessageClient
     {
         private volatile StreamSocket socket;
+        private ConcurrentQueue<string> messageQueue;
+        private EventWaitHandle callbackWaitHandle;
+        private MessageCallback callback;
 
         public async Task Connect(string serverHostname, string serverPort)
         {
             socket = new StreamSocket();
+            messageQueue = new ConcurrentQueue<string>();
+            callbackWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            callback = null;
 
             HostName hostNameObj = new HostName(serverHostname);
             await socket.ConnectAsync(hostNameObj, serverPort);
@@ -29,7 +34,18 @@
             socket.Dispose();
         }
 
-        public void StartReadLoop(MessageCallback callback)
+        public void RegisterCallback(MessageCallback callback)
+        {
+            this.callback = callback;
+            callbackWaitHandle.Set();
+        }
+
+        public void DeregisterCallback()
+        {
+            this.callback = null;
+        }
+
+        public void StartReceivingMessages()
         {
             Task readLoopTask = new Task(async () =>
             {
@@ -50,10 +66,31 @@
                         messageChars[i] = (char)messageBytes[i];
                     }
                     string message = new string(messageChars);
-                    callback(message);
+                    messageQueue.Enqueue(message);
+                    callbackWaitHandle.Set();
                 }
             }, TaskCreationOptions.LongRunning);
+
+            Task runCallbackTask = new Task(() =>
+            {
+                while (true)
+                {
+                    callbackWaitHandle.WaitOne();
+
+                    while (messageQueue.Count > 0 && callback != null)
+                    {
+                        string message;
+                        bool dequeued = messageQueue.TryDequeue(out message);
+                        if (dequeued)
+                        {
+                            callback(message);
+                        }
+                    }
+                }
+            }, TaskCreationOptions.LongRunning);
+
             readLoopTask.Start();
+            runCallbackTask.Start();
         }
 
         public async Task SendMessageAsync(string message)
