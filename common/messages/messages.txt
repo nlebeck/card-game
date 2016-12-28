@@ -1,0 +1,10 @@
+LobbyStateMessage:
+    string[] gameNames
+    int[] gameStatuses
+    int[] gamePlayerCounts
+
+LoginMessage:
+    string userName
+
+LoginReplyMessage:
+    int response
