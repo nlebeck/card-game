@@ -58,6 +58,7 @@ for my $messageType (keys %messageHash) {
         print(MESSAGE_FILE "    public $memberHash{$memberName} $memberName;\n");
     }
     print(MESSAGE_FILE "}\n");
+    close(MESSAGE_FILE);
 }
 
 # Generate Java JsonMessageFactory source file
@@ -80,3 +81,4 @@ for my $messageType (keys %messageHash) {
 print(JAVA_FACTORY_FILE "\n");
 print(JAVA_FACTORY_FILE "        return null;\n");
 print(JAVA_FACTORY_FILE "    }\n");
+close(JAVA_FACTORY_FILE);
