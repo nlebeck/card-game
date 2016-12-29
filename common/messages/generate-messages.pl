@@ -41,8 +41,8 @@ while(<MESSAGE_FILE>) {
             && $memberType ne "string") {
             die "Unrecognized type: $memberType";
         }
-        my $messageHashRef = $messageHash{$currentMessageType};
-        $messageHashRef->{$memberName} = $memberType;
+        my $memberHashRef = $messageHash{$currentMessageType};
+        $memberHashRef->{$memberName} = $memberType;
     }
 }
 close(MESSAGE_FILE);
@@ -81,4 +81,27 @@ for my $messageType (keys %messageHash) {
 print(JAVA_FACTORY_FILE "\n");
 print(JAVA_FACTORY_FILE "        return null;\n");
 print(JAVA_FACTORY_FILE "    }\n");
+print(JAVA_FACTORY_FILE "\n");
+for my $messageType (keys %messageHash) {
+    my %memberHash = %{$messageHash{$messageType}};
+
+    print(JAVA_FACTORY_FILE "    public static $messageType create$messageType(");
+    my @keysArray = keys %memberHash;
+    for (my $i = 0; $i < @keysArray - 1; $i++) {
+        my $memberName = $keysArray[$i];
+        print(JAVA_FACTORY_FILE "$memberHash{$memberName} $memberName, ");
+    }
+    my $lastMemberName = $keysArray[@keysArray - 1];
+    print(JAVA_FACTORY_FILE "$memberHash{$lastMemberName} $lastMemberName) {\n");
+
+    print(JAVA_FACTORY_FILE "        $messageType message = new $messageType();\n");
+    print(JAVA_FACTORY_FILE "        message.messageType = \"$messageType\";\n");
+    for my $memberName(keys %memberHash) {
+        print(JAVA_FACTORY_FILE "        message.$memberName = $memberName;\n");
+    }
+    print(JAVA_FACTORY_FILE "        return message;\n");
+    print(JAVA_FACTORY_FILE "    }\n");
+    print(JAVA_FACTORY_FILE "\n");
+}
+print(JAVA_FACTORY_FILE "}\n");
 close(JAVA_FACTORY_FILE);
