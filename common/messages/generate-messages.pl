@@ -5,6 +5,8 @@ use strict;
 
 my $usage = "./generate-messages.pl message-file";
 
+my $javaPackage = "niellebeck.cardgame.messages";
+
 if (@ARGV != 1) {
     die $usage;
 }
@@ -40,15 +42,19 @@ while(<MESSAGE_FILE>) {
             die "Unrecognized type: $memberType";
         }
         my $messageHashRef = $messageHash{$currentMessageType};
-        $messageHashRef->{$memberType} = $memberName;
+        $messageHashRef->{$memberName} = $memberType;
     }
 }
 close(MESSAGE_FILE);
 
-for my $key (keys %messageHash) {
-    print("Message type: $key\n");
-    my %memberHash = %{$messageHash{$key}};
-    for my $memberKey (keys %memberHash) {
-        print("    Member: $memberKey $memberHash{$memberKey}\n");
+for my $messageType (keys %messageHash) {
+    open(MESSAGE_FILE, "> generated-java/$messageType.java");
+    print(MESSAGE_FILE "package niellebeck.cardgameserver.messages\n");
+    print(MESSAGE_FILE "\n");
+    print(MESSAGE_FILE "public class $messageType extends JsonMessage {\n");
+    my %memberHash = %{$messageHash{$messageType}};
+    for my $memberName (keys %memberHash) {
+        print(MESSAGE_FILE "    public $memberHash{$memberName} $memberName;\n");
     }
+    print(MESSAGE_FILE "}\n");
 }
