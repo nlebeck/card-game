@@ -47,9 +47,10 @@ while(<MESSAGE_FILE>) {
 }
 close(MESSAGE_FILE);
 
+# Generate Java message source files
 for my $messageType (keys %messageHash) {
     open(MESSAGE_FILE, "> generated-java/$messageType.java");
-    print(MESSAGE_FILE "package niellebeck.cardgameserver.messages\n");
+    print(MESSAGE_FILE "package $javaPackage\n");
     print(MESSAGE_FILE "\n");
     print(MESSAGE_FILE "public class $messageType extends JsonMessage {\n");
     my %memberHash = %{$messageHash{$messageType}};
@@ -58,3 +59,24 @@ for my $messageType (keys %messageHash) {
     }
     print(MESSAGE_FILE "}\n");
 }
+
+# Generate Java JsonMessageFactory source file
+open(JAVA_FACTORY_FILE, "> generated-java/JsonMessageFactory.java");
+print(JAVA_FACTORY_FILE "package $javaPackage\n");
+print(JAVA_FACTORY_FILE "\n");
+print(JAVA_FACTORY_FILE "import com.google.gson.Gson;\n");
+print(JAVA_FACTORY_FILE "\n");
+print(JAVA_FACTORY_FILE "public class JsonMessageFactory {\n");
+print(JAVA_FACTORY_FILE "    public static JsonMessage deserializeJsonMessage(String message) {\n");
+print(JAVA_FACTORY_FILE "        Gson gson = new Gson();\n");
+print(JAVA_FACTORY_FILE "        JsonMessage jsonMessage = gson.fromJson(message, JsonMessage.class);\n");
+print(JAVA_FACTORY_FILE "        String messageType = jsonMessage.messageType;\n");
+print(JAVA_FACTORY_FILE "\n");
+for my $messageType (keys %messageHash) {
+    print(JAVA_FACTORY_FILE "        if (messageType.equals(\"$messageType\")) {\n");
+    print(JAVA_FACTORY_FILE "            return gson.fromJson(message, $messageType.class);\n");
+    print(JAVA_FACTORY_FILE "        }\n");
+}
+print(JAVA_FACTORY_FILE "\n");
+print(JAVA_FACTORY_FILE "        return null;\n");
+print(JAVA_FACTORY_FILE "    }\n");
