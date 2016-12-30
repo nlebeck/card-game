@@ -1,5 +1,6 @@
-﻿namespace UWPClient.Messages
+namespace UWPClient.Messages
 {
+
     public class LobbyStateMessage : JsonMessage
     {
         public string[] gameNames;
