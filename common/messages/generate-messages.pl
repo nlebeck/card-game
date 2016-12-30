@@ -6,6 +6,7 @@ use strict;
 my $usage = "./generate-messages.pl message-file";
 
 my $javaPackage = "niellebeck.cardgame.messages";
+my $csharpNamespace = "UWPClient.Messages";
 
 if (@ARGV != 1) {
     die $usage;
@@ -55,7 +56,14 @@ for my $messageType (keys %messageHash) {
     print(MESSAGE_FILE "public class $messageType extends JsonMessage {\n");
     my %memberHash = %{$messageHash{$messageType}};
     for my $memberName (keys %memberHash) {
-        print(MESSAGE_FILE "    public $memberHash{$memberName} $memberName;\n");
+        my $memberType = $memberHash{$memberName};
+        if ($memberType eq "string") {
+            $memberType = "String";
+        }
+        elsif ($memberType eq "string[]") {
+            $memberType = "String[]";
+        }
+        print(MESSAGE_FILE "    public $memberType $memberName;\n");
     }
     print(MESSAGE_FILE "}\n");
     close(MESSAGE_FILE);
@@ -89,10 +97,24 @@ for my $messageType (keys %messageHash) {
     my @keysArray = keys %memberHash;
     for (my $i = 0; $i < @keysArray - 1; $i++) {
         my $memberName = $keysArray[$i];
-        print(JAVA_FACTORY_FILE "$memberHash{$memberName} $memberName, ");
+        my $memberType = $memberHash{$memberName};
+        if ($memberType eq "string") {
+            $memberType = "String";
+        }
+        elsif ($memberType eq "string[]") {
+            $memberType = "String[]";
+        }
+        print(JAVA_FACTORY_FILE "$memberType $memberName, ");
     }
     my $lastMemberName = $keysArray[@keysArray - 1];
-    print(JAVA_FACTORY_FILE "$memberHash{$lastMemberName} $lastMemberName) {\n");
+    my $lastMemberType = $memberHash{$lastMemberName};
+    if ($lastMemberType eq "string") {
+        $lastMemberType = "String";
+    }
+    elsif ($lastMemberType eq "string[]") {
+        $lastMemberType = "String[]";
+    }
+    print(JAVA_FACTORY_FILE "$lastMemberType $lastMemberName) {\n");
 
     print(JAVA_FACTORY_FILE "        $messageType message = new $messageType();\n");
     print(JAVA_FACTORY_FILE "        message.messageType = \"$messageType\";\n");
@@ -105,3 +127,72 @@ for my $messageType (keys %messageHash) {
 }
 print(JAVA_FACTORY_FILE "}\n");
 close(JAVA_FACTORY_FILE);
+
+# Generate C# message source files
+for my $messageType (keys %messageHash) {
+    open(MESSAGE_FILE, "> generated-csharp/$messageType.cs");
+    print(MESSAGE_FILE "namespace $csharpNamespace\n");
+    print(MESSAGE_FILE "{\n");
+    print(MESSAGE_FILE "\n");
+    print(MESSAGE_FILE "    public class $messageType : JsonMessage\n");
+    print(MESSAGE_FILE "    {\n");
+    my %memberHash = %{$messageHash{$messageType}};
+    for my $memberName (keys %memberHash) {
+        my $memberType = $memberHash{$memberName};
+        print(MESSAGE_FILE "        public $memberType $memberName;\n");
+    }
+    print(MESSAGE_FILE "    }\n");
+    print(MESSAGE_FILE "}\n");
+    close(MESSAGE_FILE);
+}
+
+# Generate C# JsonMessageFactory source file
+open(CSHARP_FACTORY_FILE, "> generated-csharp/JsonMessageFactory.cs");
+print(CSHARP_FACTORY_FILE "namespace $csharpNamespace\n");
+print(CSHARP_FACTORY_FILE "{\n");
+print(CSHARP_FACTORY_FILE "\n");
+print(CSHARP_FACTORY_FILE "    using Newtonsoft.Json;\n");
+print(CSHARP_FACTORY_FILE "\n");
+print(CSHARP_FACTORY_FILE "    public class JsonMessageFactory\n");
+print(CSHARP_FACTORY_FILE "    {\n");
+print(CSHARP_FACTORY_FILE "        public static JsonMessage DeserializeJsonMessage(string message)\n");
+print(CSHARP_FACTORY_FILE "        {\n");
+print(CSHARP_FACTORY_FILE "            JsonMessage jsonMessage = JsonConvert.DeserializeObject<JsonMessage>(message);\n");
+print(CSHARP_FACTORY_FILE "            String messageType = jsonMessage.messageType;\n");
+print(CSHARP_FACTORY_FILE "\n");
+for my $messageType (keys %messageHash) {
+    print(CSHARP_FACTORY_FILE "            if (messageType.Equals(\"$messageType\")) {\n");
+    print(CSHARP_FACTORY_FILE "                return JsonConvert.DeserializeObject<$messageType>(message);\n");
+    print(CSHARP_FACTORY_FILE "            }\n");
+}
+print(CSHARP_FACTORY_FILE "\n");
+print(CSHARP_FACTORY_FILE "            return null;\n");
+print(CSHARP_FACTORY_FILE "        }\n");
+print(CSHARP_FACTORY_FILE "\n");
+for my $messageType (keys %messageHash) {
+    my %memberHash = %{$messageHash{$messageType}};
+
+    print(CSHARP_FACTORY_FILE "        public static $messageType Create$messageType(");
+    my @keysArray = keys %memberHash;
+    for (my $i = 0; $i < @keysArray - 1; $i++) {
+        my $memberName = $keysArray[$i];
+        my $memberType = $memberHash{$memberName};
+        print(CSHARP_FACTORY_FILE "$memberType $memberName, ");
+    }
+    my $lastMemberName = $keysArray[@keysArray - 1];
+    my $lastMemberType = $memberHash{$lastMemberName};
+    print(CSHARP_FACTORY_FILE "$lastMemberType $lastMemberName)\n");
+    print(CSHARP_FACTORY_FILE "        {\n");
+
+    print(CSHARP_FACTORY_FILE "            $messageType message = new $messageType();\n");
+    print(CSHARP_FACTORY_FILE "            message.messageType = \"$messageType\";\n");
+    for my $memberName(keys %memberHash) {
+        print(CSHARP_FACTORY_FILE "            message.$memberName = $memberName;\n");
+    }
+    print(CSHARP_FACTORY_FILE "            return message;\n");
+    print(CSHARP_FACTORY_FILE "        }\n");
+    print(CSHARP_FACTORY_FILE "\n");
+}
+print(CSHARP_FACTORY_FILE "    }\n");
+print(CSHARP_FACTORY_FILE "}\n");
+close(CSHARP_FACTORY_FILE);
