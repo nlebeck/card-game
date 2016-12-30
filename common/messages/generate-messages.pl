@@ -17,7 +17,8 @@ if (@ARGV != 1) {
 
 my $messageFile = $ARGV[0];
 
-my %messageHash;
+my %messageHash; # Maps each message type to a reference to an array containing its members,
+                 # where each entry is "[type] [name]"
 
 my $currentMessageType;
 
@@ -25,7 +26,7 @@ open(MESSAGE_FILE, $messageFile);
 while(<MESSAGE_FILE>) {
     if ($_ =~ /(\w+):\s*$/) {
         my $messageType = $1;
-        $messageHash{$messageType} = {};
+        $messageHash{$messageType} = [];
         $currentMessageType = $messageType;
     }
     elsif ($_ =~ /\w+/) {
@@ -45,8 +46,8 @@ while(<MESSAGE_FILE>) {
             && $memberType ne "string") {
             die "Unrecognized type: $memberType";
         }
-        my $memberHashRef = $messageHash{$currentMessageType};
-        $memberHashRef->{$memberName} = $memberType;
+        my $memberArrayRef = $messageHash{$currentMessageType};
+        push(@$memberArrayRef, "$memberType $memberName");
     }
 }
 close(MESSAGE_FILE);
@@ -57,9 +58,9 @@ for my $messageType (keys %messageHash) {
     print(MESSAGE_FILE "package $javaPackage;\n");
     print(MESSAGE_FILE "\n");
     print(MESSAGE_FILE "public class $messageType extends JsonMessage {\n");
-    my %memberHash = %{$messageHash{$messageType}};
-    for my $memberName (keys %memberHash) {
-        my $memberType = $memberHash{$memberName};
+    my @memberArray = @{$messageHash{$messageType}};
+    for (my $i = 0; $i < @memberArray; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         if ($memberType eq "string") {
             $memberType = "String";
         }
@@ -94,13 +95,11 @@ print(JAVA_FACTORY_FILE "        return null;\n");
 print(JAVA_FACTORY_FILE "    }\n");
 print(JAVA_FACTORY_FILE "\n");
 for my $messageType (keys %messageHash) {
-    my %memberHash = %{$messageHash{$messageType}};
+    my @memberArray = @{$messageHash{$messageType}};
 
     print(JAVA_FACTORY_FILE "    public static $messageType create$messageType(");
-    my @keysArray = keys %memberHash;
-    for (my $i = 0; $i < @keysArray - 1; $i++) {
-        my $memberName = $keysArray[$i];
-        my $memberType = $memberHash{$memberName};
+    for (my $i = 0; $i < @memberArray - 1; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         if ($memberType eq "string") {
             $memberType = "String";
         }
@@ -109,8 +108,7 @@ for my $messageType (keys %messageHash) {
         }
         print(JAVA_FACTORY_FILE "$memberType $memberName, ");
     }
-    my $lastMemberName = $keysArray[@keysArray - 1];
-    my $lastMemberType = $memberHash{$lastMemberName};
+    my ($lastMemberType, $lastMemberName) = split(/\s+/, $memberArray[@memberArray - 1]);
     if ($lastMemberType eq "string") {
         $lastMemberType = "String";
     }
@@ -121,7 +119,8 @@ for my $messageType (keys %messageHash) {
 
     print(JAVA_FACTORY_FILE "        $messageType message = new $messageType();\n");
     print(JAVA_FACTORY_FILE "        message.messageType = \"$messageType\";\n");
-    for my $memberName(keys %memberHash) {
+    for (my $i = 0; $i < @memberArray; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         print(JAVA_FACTORY_FILE "        message.$memberName = $memberName;\n");
     }
     print(JAVA_FACTORY_FILE "        return message;\n");
@@ -139,9 +138,9 @@ for my $messageType (keys %messageHash) {
     print(MESSAGE_FILE "\n");
     print(MESSAGE_FILE "    public class $messageType : JsonMessage\n");
     print(MESSAGE_FILE "    {\n");
-    my %memberHash = %{$messageHash{$messageType}};
-    for my $memberName (keys %memberHash) {
-        my $memberType = $memberHash{$memberName};
+    my @memberArray = @{$messageHash{$messageType}};
+    for (my $i = 0; $i < @memberArray; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         print(MESSAGE_FILE "        public $memberType $memberName;\n");
     }
     print(MESSAGE_FILE "    }\n");
@@ -164,7 +163,8 @@ print(CSHARP_FACTORY_FILE "            JsonMessage jsonMessage = JsonConvert.Des
 print(CSHARP_FACTORY_FILE "            string messageType = jsonMessage.messageType;\n");
 print(CSHARP_FACTORY_FILE "\n");
 for my $messageType (keys %messageHash) {
-    print(CSHARP_FACTORY_FILE "            if (messageType.Equals(\"$messageType\")) {\n");
+    print(CSHARP_FACTORY_FILE "            if (messageType.Equals(\"$messageType\"))\n");
+    print(CSHARP_FACTORY_FILE "            {\n");
     print(CSHARP_FACTORY_FILE "                return JsonConvert.DeserializeObject<$messageType>(message);\n");
     print(CSHARP_FACTORY_FILE "            }\n");
 }
@@ -173,23 +173,21 @@ print(CSHARP_FACTORY_FILE "            return null;\n");
 print(CSHARP_FACTORY_FILE "        }\n");
 print(CSHARP_FACTORY_FILE "\n");
 for my $messageType (keys %messageHash) {
-    my %memberHash = %{$messageHash{$messageType}};
+    my @memberArray = @{$messageHash{$messageType}};
 
     print(CSHARP_FACTORY_FILE "        public static $messageType Create$messageType(");
-    my @keysArray = keys %memberHash;
-    for (my $i = 0; $i < @keysArray - 1; $i++) {
-        my $memberName = $keysArray[$i];
-        my $memberType = $memberHash{$memberName};
+    for (my $i = 0; $i < @memberArray - 1; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         print(CSHARP_FACTORY_FILE "$memberType $memberName, ");
     }
-    my $lastMemberName = $keysArray[@keysArray - 1];
-    my $lastMemberType = $memberHash{$lastMemberName};
+    my ($lastMemberType, $lastMemberName) = split(/\s+/, $memberArray[@memberArray - 1]);
     print(CSHARP_FACTORY_FILE "$lastMemberType $lastMemberName)\n");
     print(CSHARP_FACTORY_FILE "        {\n");
 
     print(CSHARP_FACTORY_FILE "            $messageType message = new $messageType();\n");
     print(CSHARP_FACTORY_FILE "            message.messageType = \"$messageType\";\n");
-    for my $memberName(keys %memberHash) {
+    for (my $i = 0; $i < @memberArray; $i++) {
+        my ($memberType, $memberName) = split(/\s+/, $memberArray[$i]);
         print(CSHARP_FACTORY_FILE "            message.$memberName = $memberName;\n");
     }
     print(CSHARP_FACTORY_FILE "            return message;\n");
