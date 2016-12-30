@@ -5,8 +5,11 @@ use strict;
 
 my $usage = "./generate-messages.pl message-file";
 
-my $javaPackage = "niellebeck.cardgame.messages";
+my $javaPackage = "niellebeck.cardgameserver.messages";
 my $csharpNamespace = "UWPClient.Messages";
+
+my $javaOutputDir = "../../server/CardGameServer/src/main/java/niellebeck/cardgameserver/messages";
+my $csharpOutputDir = "../../client/UWPClient/UWPClient/Messages";
 
 if (@ARGV != 1) {
     die $usage;
@@ -50,8 +53,8 @@ close(MESSAGE_FILE);
 
 # Generate Java message source files
 for my $messageType (keys %messageHash) {
-    open(MESSAGE_FILE, "> generated-java/$messageType.java");
-    print(MESSAGE_FILE "package $javaPackage\n");
+    open(MESSAGE_FILE, "> $javaOutputDir/$messageType.java");
+    print(MESSAGE_FILE "package $javaPackage;\n");
     print(MESSAGE_FILE "\n");
     print(MESSAGE_FILE "public class $messageType extends JsonMessage {\n");
     my %memberHash = %{$messageHash{$messageType}};
@@ -70,8 +73,8 @@ for my $messageType (keys %messageHash) {
 }
 
 # Generate Java JsonMessageFactory source file
-open(JAVA_FACTORY_FILE, "> generated-java/JsonMessageFactory.java");
-print(JAVA_FACTORY_FILE "package $javaPackage\n");
+open(JAVA_FACTORY_FILE, "> $javaOutputDir/JsonMessageFactory.java");
+print(JAVA_FACTORY_FILE "package $javaPackage;\n");
 print(JAVA_FACTORY_FILE "\n");
 print(JAVA_FACTORY_FILE "import com.google.gson.Gson;\n");
 print(JAVA_FACTORY_FILE "\n");
@@ -130,7 +133,7 @@ close(JAVA_FACTORY_FILE);
 
 # Generate C# message source files
 for my $messageType (keys %messageHash) {
-    open(MESSAGE_FILE, "> generated-csharp/$messageType.cs");
+    open(MESSAGE_FILE, "> $csharpOutputDir/$messageType.cs");
     print(MESSAGE_FILE "namespace $csharpNamespace\n");
     print(MESSAGE_FILE "{\n");
     print(MESSAGE_FILE "\n");
@@ -147,7 +150,7 @@ for my $messageType (keys %messageHash) {
 }
 
 # Generate C# JsonMessageFactory source file
-open(CSHARP_FACTORY_FILE, "> generated-csharp/JsonMessageFactory.cs");
+open(CSHARP_FACTORY_FILE, "> $csharpOutputDir/JsonMessageFactory.cs");
 print(CSHARP_FACTORY_FILE "namespace $csharpNamespace\n");
 print(CSHARP_FACTORY_FILE "{\n");
 print(CSHARP_FACTORY_FILE "\n");
@@ -158,7 +161,7 @@ print(CSHARP_FACTORY_FILE "    {\n");
 print(CSHARP_FACTORY_FILE "        public static JsonMessage DeserializeJsonMessage(string message)\n");
 print(CSHARP_FACTORY_FILE "        {\n");
 print(CSHARP_FACTORY_FILE "            JsonMessage jsonMessage = JsonConvert.DeserializeObject<JsonMessage>(message);\n");
-print(CSHARP_FACTORY_FILE "            String messageType = jsonMessage.messageType;\n");
+print(CSHARP_FACTORY_FILE "            string messageType = jsonMessage.messageType;\n");
 print(CSHARP_FACTORY_FILE "\n");
 for my $messageType (keys %messageHash) {
     print(CSHARP_FACTORY_FILE "            if (messageType.Equals(\"$messageType\")) {\n");

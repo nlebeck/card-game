@@ -2,6 +2,7 @@ LobbyStateMessage:
     string[] gameNames
     int[] gameStatuses
     int[] gamePlayerCounts
+    string[] users
 
 LoginMessage:
     string userName
